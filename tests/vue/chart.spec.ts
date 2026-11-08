@@ -65,6 +65,17 @@ describe('GanttChart', () => {
     expect(heads(weeks)).toEqual([['November', '2'], ['', '9'], ['', '16']])
   })
 
+  it('names the band of the first column in view after a scroll', async () => {
+    const w = chart()
+    const scroller = w.find('.gt-scroll').element as HTMLElement
+    const third = w.findAll('.gt-colhead')[2]!
+    expect(third.find('.gt-colhead__band').text()).toBe('')
+    scroller.scrollLeft = parseFloat(third.attributes('style')!.match(/left: ([\d.]+)px/)![1]!) + 2
+    scroller.dispatchEvent(new Event('scroll'))
+    await nextTick()
+    expect(third.find('.gt-colhead__band').text()).toBe('Q4')
+  })
+
   it('speaks Russian when asked', () => {
     const w = chart({ locale: 'ru' })
     expect(w.find('.gt-today__badge').text()).toBe('сегодня')

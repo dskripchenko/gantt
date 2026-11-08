@@ -15,20 +15,23 @@ export function monthName(lang: string, month: number, style: 'long' | 'short' =
 export interface HeaderCell {
   /** The band above: a quarter over months, a month over weeks, a year over quarters; empty inside a band. */
   band: string
+  /** The band the column belongs to, inside a band too: the first column in view shows it. */
+  bandOf: string
   label: string
 }
 
 export function headerCell(column: ScaleColumn, zoom: Zoom, lang: string, labels: GanttLabels): HeaderCell {
   const p = columnParts(column)
+  const cell = (bandOf: string, label: string): HeaderCell => ({ band: column.bandStart ? bandOf : '', bandOf, label })
   switch (zoom) {
     case 'day':
-      return { band: column.bandStart ? monthName(lang, p.month) : '', label: String(p.date) }
+      return cell(monthName(lang, p.month), String(p.date))
     case 'week':
-      return { band: column.bandStart ? monthName(lang, p.month) : '', label: labels.week(p.date) }
+      return cell(monthName(lang, p.month), labels.week(p.date))
     case 'month':
-      return { band: column.bandStart ? labels.quarter(p.quarter) : '', label: monthName(lang, p.month) }
+      return cell(labels.quarter(p.quarter), monthName(lang, p.month))
     case 'quarter':
-      return { band: column.bandStart ? String(p.year) : '', label: labels.quarter(p.quarter) }
+      return cell(String(p.year), labels.quarter(p.quarter))
   }
 }
 

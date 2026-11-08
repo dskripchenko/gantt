@@ -195,6 +195,15 @@ const scale = computed(() =>
   createScale({ zoom: props.zoom, from: range.value.from, to: range.value.to, width: Math.max(0, viewWidth.value - tableW.value - 1), weekStartsOn: props.weekStartsOn }),
 )
 const header = computed(() => scale.value.columns.map((column) => ({ column, ...headerCell(column, props.zoom, lang.value, t.value) })))
+// The first column in view names its band even inside it: the band scrolled away should not leave it unnamed.
+const scrollX = ref(0)
+const firstShown = computed(() => {
+  const x = scrollX.value
+  return scale.value.columns.findIndex((c) => c.x + c.width > x + 1)
+})
+function onScroll() {
+  scrollX.value = scroller.value?.scrollLeft ?? 0
+}
 const todayX = computed(() => {
   const d = toDay(today.value)
   if (d < scale.value.from || d >= scale.value.to) return null
@@ -217,6 +226,7 @@ function scrollToDate(date: ISODate, align: 'start' | 'center' = 'start') {
 }
 function scrollToToday() {
   if (todayX.value !== null) scrollToDate(today.value)
+  onScroll()
 }
 watch(() => props.zoom, () => void nextTick(scrollToToday))
 
@@ -620,6 +630,7 @@ const descId = `gt-keys-${Math.random().toString(36).slice(2, 8)}`
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
         @pointercancel="onDragCancel"
+        @scroll.passive="onScroll"
       >
         <div
           class="gt-inner"
@@ -653,13 +664,13 @@ const descId = `gt-keys-${Math.random().toString(36).slice(2, 8)}`
               :style="{ width: `${scale.width}px` }"
             >
               <div
-                v-for="h in header"
+                v-for="(h, i) in header"
                 :key="h.column.start"
                 class="gt-colhead"
                 :style="{ left: `${h.column.x}px`, width: `${h.column.width}px` }"
               >
                 <div class="gt-colhead__band">
-                  {{ h.band }}
+                  {{ h.band || (i === firstShown ? h.bandOf : '') }}
                 </div>
                 <div class="gt-colhead__label">
                   {{ h.label }}
